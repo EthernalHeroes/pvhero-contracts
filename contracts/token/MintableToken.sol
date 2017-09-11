@@ -1,9 +1,9 @@
 pragma solidity ^0.4.8;
 
-import "./zeppelin/contracts/math/SafeMath.sol";
-import "./zeppelin/contracts/token/ERC20.sol";
-import "./zeppelin/contracts/ownership/Ownable.sol";
-import './StandardToken.sol';
+import "../zeppelin/contracts/math/SafeMath.sol";
+import "../zeppelin/contracts/token/ERC20.sol";
+import "../zeppelin/contracts/ownership/Ownable.sol";
+import '../token/StandardToken.sol';
 
 /**
  * Токен, выпуск которого может быть увеличен посредством другого контракта

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.8;
 
-import "./zeppelin/contracts/math/SafeMath.sol";
-import "./PricingStrategy.sol";
+import "../zeppelin/contracts/math/SafeMath.sol";
+import "../pricingStrategy/PricingStrategy.sol";
 
 /**
  * Шаблон фиксированной цены, на всем протяжении продаж применяется только 1 цена

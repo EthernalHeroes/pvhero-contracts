@@ -2,9 +2,9 @@ pragma solidity ^0.4.8;
 
 import "./zeppelin/contracts/math/SafeMath.sol";
 import "./Haltable.sol";
-import "./PricingStrategy.sol";
-import "./FinalizeAgent.sol";
-import "./FractionalERC20.sol";
+import "./pricingStrategy/PricingStrategy.sol";
+import "./finalizer/FinalizeAgent.sol";
+import "./token/FractionalERC20.sol";
 
 /**
  * Базовый контракт для пресейла

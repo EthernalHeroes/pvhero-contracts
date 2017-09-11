@@ -31,8 +31,8 @@ contract PricingStrategy {
      * Вычисляем кол-во токенов, которое можно купить за эфир
      *
      * @param value - кол-во wei в транзакции
-     * @param weiRaised - сколько заработаем wei
-     * @param tokensSold - сколько токенов продадим
+     * @param weiRaised - сколько всего заработали wei
+     * @param tokensSold - сколько токенов всего продали
      * @param msgSender - инвестор
      * @param decimals - кол-во знаков после ","
      * @return - кол-во токенов, которое получить инвестор

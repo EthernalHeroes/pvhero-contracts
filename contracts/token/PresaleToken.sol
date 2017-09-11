@@ -1,7 +1,7 @@
 pragma solidity ^0.4.8;
 
-import './StandardToken.sol';
-import "./MintableToken.sol";
+import '../token/StandardToken.sol';
+import "../token/MintableToken.sol";
 
 /**
  * Токен предпродаж

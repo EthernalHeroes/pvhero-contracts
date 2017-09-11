@@ -1,7 +1,7 @@
 pragma solidity ^0.4.8;
 
-import "./Presale.sol";
-import "./PresaleToken.sol";
+import "../Presale.sol";
+import "../token/PresaleToken.sol";
 
 /**
  * Стандартный финализатор, который передается в контракт пресейла

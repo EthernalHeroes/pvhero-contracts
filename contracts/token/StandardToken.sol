@@ -1,7 +1,7 @@
 pragma solidity ^0.4.8;
 
-import "./zeppelin/contracts/math/SafeMath.sol";
-import './zeppelin/contracts/token/ERC20.sol';
+import "../zeppelin/contracts/math/SafeMath.sol";
+import '../zeppelin/contracts/token/ERC20.sol';
 
 /**
  * Стандарт ERC20
