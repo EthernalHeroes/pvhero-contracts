@@ -26,4 +26,9 @@ contract DefaultPresaleFinalizeAgent is FinalizeAgent {
     function finalize() public {
     }
 
+    // Контракт не принимает платежи
+    function() payable {
+        revert();
+    }
+
 }

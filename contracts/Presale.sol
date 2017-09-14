@@ -252,7 +252,7 @@ contract Presale is Haltable {
     function setPricingStrategy(PricingStrategy _pricingStrategy) onlyOwner {
         pricingStrategy = _pricingStrategy;
 
-        // Не позволяем установить пустуб стратегию
+        // Не позволяем установить пустую стратегию
         require(pricingStrategy.isPricingStrategy());
     }
 

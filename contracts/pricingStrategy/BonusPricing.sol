@@ -22,7 +22,7 @@ contract BonusPricing is PricingStrategy {
         // Сумма в wei, когда начинает действовать правило
         uint amount;
         // Скидка в %
-        uint discountPercentage;
+        uint bonusPercentage;
     }
 
     /**
@@ -59,7 +59,7 @@ contract BonusPricing is PricingStrategy {
 
         for(uint i = 0; i < _items.length / 2; i++) {
             items[i].amount = _items[i * 2];
-            items[i].discountPercentage = _items[i * 2 + 1];
+            items[i].bonusPercentage = _items[i * 2 + 1];
 
             // Проверка на валидность
             if((highestAmount != 0) && (items[i].amount <= highestAmount)) {
@@ -109,31 +109,19 @@ contract BonusPricing is PricingStrategy {
     }
 
     /**
-    * Вычисляем стоимость 1 токена в wei с учетом ценовой политики
-    */
-
-    function getOneTokenInWeiWithBonus(uint weiValue) public constant returns (uint result) {
-
-        uint discountPercentage = getItemForAmount(weiValue).discountPercentage;
-
-        // Вычисляем цену 1 токена в wei с учетом скидки
-        uint oneTokenInWeiWithBonus = oneTokenInWei.mul(100 - discountPercentage) / 100;
-
-        return oneTokenInWeiWithBonus;
-    }
-
-    /**
      * Вычисляем кол-во токенов, которое можно купить за эфир
      *
      */
     function calculatePrice(uint value, uint weiRaised, uint tokensSold, address msgSender, uint decimals) public constant returns (uint) {
 
+        // В случае, если нет подходящего условия, откатываем транзакцию
+        uint bonusPercentage = getItemForAmount(value).bonusPercentage;
+
         uint multiplier = 10 ** decimals;
 
-        // В случае, если нет подходящего условия, откатываем транзакцию
-        uint oneTokenInWeiWithBonus = getOneTokenInWeiWithBonus(value);
+        uint resultValue = value.mul(multiplier) / oneTokenInWei;
 
-        return value.mul(multiplier) / oneTokenInWeiWithBonus;
+        return resultValue.mul(100 + bonusPercentage) / 100;
     }
 
     // Контракт не принимает платежи
