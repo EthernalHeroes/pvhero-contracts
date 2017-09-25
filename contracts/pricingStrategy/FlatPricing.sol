@@ -4,7 +4,7 @@ import "../zeppelin/contracts/math/SafeMath.sol";
 import "../pricingStrategy/PricingStrategy.sol";
 
 /**
- * Шаблон фиксированной цены, на всем протяжении продаж применяется только 1 цена
+ * Шаблон фиксированной цены, на всем протяжении продаж применяется только 1 цена, его можно не проверять, он не используется в проекте
  */
 
 contract FlatPricing is PricingStrategy {

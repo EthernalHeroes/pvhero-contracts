@@ -21,7 +21,7 @@ contract BonusPricing is PricingStrategy {
     struct Item {
         // Сумма в wei, когда начинает действовать правило
         uint amount;
-        // Скидка в %
+        // Бонус в %
         uint bonusPercentage;
     }
 
