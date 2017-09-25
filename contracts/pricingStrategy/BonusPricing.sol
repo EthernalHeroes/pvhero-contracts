@@ -87,17 +87,17 @@ contract BonusPricing is PricingStrategy {
 
         for(i = 0; i < itemCount; i++) {
 
-            // Если интервал справа не найден, то считаем, что просто больше текущей цены
+            // Если интервал справа не найден, то считаем, что просто больше или равно текущей цене
             if (i + 1 >= itemCount){
 
-                if(weiValue > items[i].amount) {
+                if(weiValue >= items[i].amount) {
                     return items[i];
                 }
 
             }else{
-                // Если есть интервал справа, то считаем, что цена должна попадать в диапазон от текущего, до следующего элемента включительно
+                // Если есть интервал справа, то считаем, что цена должна попадать в диапазон от текущего, до следующего элемента не включительно
 
-                if(weiValue >= items[i].amount && weiValue <= items[i + 1].amount) {
+                if(weiValue >= items[i].amount && weiValue < items[i + 1].amount) {
                     return items[i];
                 }
             }

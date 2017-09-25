@@ -285,8 +285,8 @@ contract('AllocatedCappedPresale', async function(accounts) {
         await checkSendEtherAndGetBonus(accounts[1], web3.toWei(15, 'ether'), 0.25);
     });
 
-    it("В состоянии Funding, перевод 50 эфира - бонус 25%, проверка корректности получения и списания токенов", async function() {
-        await checkSendEtherAndGetBonus(accounts[1], web3.toWei(50, 'ether'), 0.25);
+    it("В состоянии Funding, перевод 49 эфира - бонус 25%, проверка корректности получения и списания токенов", async function() {
+        await checkSendEtherAndGetBonus(accounts[1], web3.toWei(49, 'ether'), 0.25);
     });
 
     // Остановка торгов
@@ -314,8 +314,8 @@ contract('AllocatedCappedPresale', async function(accounts) {
         await checkContractHalt(false);
     });
 
-    it("В состоянии Funding, перевод 51 эфира - бонус 30%, проверка корректности получения и списания токенов", async function() {
-        await checkSendEtherAndGetBonus(accounts[2], web3.toWei(51, 'ether'), 0.3);
+    it("В состоянии Funding, перевод 50 эфира - бонус 30%, проверка корректности получения и списания токенов", async function() {
+        await checkSendEtherAndGetBonus(accounts[2], web3.toWei(50, 'ether'), 0.3);
     });
 
     // Финальный перевод, покупаем все оставшиеся токены
