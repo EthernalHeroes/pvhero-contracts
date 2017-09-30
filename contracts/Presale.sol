@@ -1,36 +1,24 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.13;
 
-import "./zeppelin/contracts/math/SafeMath.sol";
 import "./Haltable.sol";
-import "./pricingStrategy/PricingStrategy.sol";
-import "./finalizer/FinalizeAgent.sol";
 import "./token/FractionalERC20.sol";
+import "./math/SafeMath.sol";
 
 /**
  * Базовый контракт для пресейла
- *
- * Содержит
- * - Дата начала и конца
- * - Различные стратегии цен
  */
 
 /* Продажи могут быть остановлены в любой момент по вызову halt() */
 
-contract Presale is Haltable {
-
-    using SafeMath for uint;
-
+contract Presale is Haltable, SafeMath {
     /* Токен, который продаем */
     FractionalERC20 public token;
 
-    /* Ценовая стратегия */
-    PricingStrategy public pricingStrategy;
-
-    /* Финализатор */
-    FinalizeAgent public finalizeAgent;
-
     /* Токены будут выдаваться с этого адреса */
     address public multisigOrSimpleWallet;
+
+    /* Стоимость 1 токена в wei*/
+    uint public oneTokenInWei;
 
     /* Старт продаж в формате UNIX timestamp */
     uint public startsAt;
@@ -58,23 +46,22 @@ contract Presale is Haltable {
 
     /** Возможные состояния
      *
-     * - Preparing: Все контракты инициализированы, но переменные еще не установлены
      * - Prefunding: Префандинг, еще не задали дату окончания
      * - Funding: Продажи
      * - Success: Достигли условия завершения
      * - Failure: Что-то пошло не так, продажи не завершились успешно
      * - Finalized: Сработал финализатор
      */
-    enum State{Unknown, Preparing, PreFunding, Funding, Success, Failure, Finalized}
+    enum State{Unknown, PreFunding, Funding, Success, Failure, Finalized}
 
     // Событие покупки токена
-    event Invested(address investor, uint weiAmount, uint tokenAmount, uint128 customerId);
+    event Invested(address investor, uint weiAmount, uint tokenAmount);
 
     // Событие изменения даты окончания пресейла
     event EndsAtChanged(uint newEndsAt);
 
     // Конструктор
-    function Presale(address _token, PricingStrategy _pricingStrategy, address _multisigOrSimpleWallet, uint _start, uint _end) {
+    function Presale(address _token, address _multisigOrSimpleWallet, uint _start, uint _end, uint _oneTokenInWei) {
 
         owner = msg.sender;
 
@@ -82,7 +69,7 @@ contract Presale is Haltable {
         // На самом деле, все хранится в uint
         token = FractionalERC20(_token);
 
-        setPricingStrategy(_pricingStrategy);
+        oneTokenInWei = _oneTokenInWei;
 
         multisigOrSimpleWallet = _multisigOrSimpleWallet;
         require(multisigOrSimpleWallet != 0);
@@ -114,27 +101,39 @@ contract Presale is Haltable {
      * Должен быть включен режим продаж
      *
      * @param receiver - эфирный адрес получателя
-     * @param customerId - опционально передается customerId, чтобы можно было трекать успешные продажи на серверной стороне
      *
      */
-    function investInternal(address receiver, uint128 customerId) stopInEmergency private {
-
-        // Если стейт - Prefunding, не принимаем инвестиции
-        if (getState() == State.PreFunding) {
-            revert();
-        }else if (getState() == State.Funding) {
-            // Участники могут инвестировать только в режиме продаж
-        }else {
-            // В любом другом случае не принимаем инвестиции
-            revert();
-        }
+    function investInternal(address receiver) stopInEmergency private {
+        require(getState() == State.Funding);
 
         uint weiAmount = msg.value;
 
-        // Получаем стоимость продажи токенов исходя из стратегии
-        uint tokenAmount = pricingStrategy.calculatePrice(weiAmount, weiRaised, tokensSold, msg.sender, token.decimals());
+        // Ценовая стратегия
 
-        // Цена = 0, выходим
+        // Получаем стоимость продажи токенов исходя из стратегии
+        uint tokenAmount = 0;
+
+        uint multiplier = 10 ** token.decimals();
+
+        uint bonusPercentage = 0;
+
+        // бонус 25%
+        if (weiAmount >= 15 ether && weiAmount < 50 ether){
+            bonusPercentage = 25;
+        // бонус 30%
+        } else if (weiAmount >= 50 ether && weiAmount < 100 ether){
+            bonusPercentage = 30;
+         // бонус 35%
+        } else if (weiAmount >= 100 ether){
+            bonusPercentage = 35;
+        } else {
+            revert();
+        }
+
+        uint resultValue = safeMul(weiAmount, multiplier) / oneTokenInWei;
+        tokenAmount = safeMul(resultValue, 100 + bonusPercentage) / 100;
+        //
+
         require(tokenAmount != 0);
 
         // Новый инвестор?
@@ -155,16 +154,16 @@ contract Presale is Haltable {
         if (!multisigOrSimpleWallet.send(weiAmount)) revert();
 
         // Вызываем событие
-        Invested(receiver, weiAmount, tokenAmount, customerId);
+        Invested(receiver, weiAmount, tokenAmount);
     }
 
     // Обновляем стату
-    function updateStat(address receiver, uint weiAmount, uint tokenAmount){
-        weiRaised = weiRaised.add(weiAmount);
-        tokensSold = tokensSold.add(tokenAmount);
+    function updateStat(address receiver, uint weiAmount, uint tokenAmount) private {
+        weiRaised = safeAdd(weiRaised, weiAmount);
+        tokensSold = safeAdd(tokensSold, tokenAmount);
 
-        investedAmountOf[receiver] = investedAmountOf[receiver].add(weiAmount);
-        tokenAmountOf[receiver] = tokenAmountOf[receiver].add(tokenAmount);
+        investedAmountOf[receiver] = safeAdd(investedAmountOf[receiver], weiAmount);
+        tokenAmountOf[receiver] = safeAdd(tokenAmountOf[receiver], tokenAmount);
     }
 
     /**
@@ -175,7 +174,7 @@ contract Presale is Haltable {
      *
      */
     function preallocate(address receiver, uint fullTokens, uint weiPrice) public onlyOwner {
-        uint tokenAmount = fullTokens.mul(10 ** token.decimals());
+        uint tokenAmount = safeMul(fullTokens, 10 ** token.decimals());
 
         // Может быть 0, выдаем токены бесплатно
         uint weiAmount = weiPrice * fullTokens;
@@ -187,21 +186,14 @@ contract Presale is Haltable {
         assignTokens(receiver, tokenAmount);
 
         // Вызываем событие
-        Invested(receiver, weiAmount, tokenAmount, 0);
-    }
-
-    /**
-     * Также поддерживаем анонимные платежи, без customerId
-     */
-    function invest(address addr) public payable {
-        investInternal(addr, 0);
+        Invested(receiver, weiAmount, tokenAmount);
     }
 
     /**
      * Покупка токенов, кидаем токены на адрес отправителя
      */
     function buy() public payable {
-        invest(msg.sender);
+        investInternal(msg.sender);
     }
 
     /**
@@ -212,24 +204,7 @@ contract Presale is Haltable {
         // Продажи должны быть не завершены
         require(!finalized);
 
-        // Финализатор - опционален, вызываем его только в случае, если он доступен
-        if (address(finalizeAgent) != 0) {
-            finalizeAgent.finalize();
-        }
-
         finalized = true;
-    }
-
-    /**
-     * Можем переустановить финализатор
-     *
-     * Установить можно без проверки стейта
-     */
-    function setFinalizeAgent(FinalizeAgent addr) onlyOwner {
-        finalizeAgent = addr;
-
-        // Если это финализатор
-        require(finalizeAgent.isFinalizeAgent());
     }
 
     /**
@@ -247,34 +222,10 @@ contract Presale is Haltable {
     }
 
     /**
-     * Только владелец можем изменить ценовую стратегию
-     */
-    function setPricingStrategy(PricingStrategy _pricingStrategy) onlyOwner {
-        pricingStrategy = _pricingStrategy;
-
-        // Не позволяем установить пустую стратегию
-        require(pricingStrategy.isPricingStrategy());
-    }
-
-    /**
      * Владелец может поменять адрес кошелька для сбора средств
      */
     function setMultisigOrSimpleWallet(address addr) public onlyOwner {
         multisigOrSimpleWallet = addr;
-    }
-
-    /**
-     * Проверка все ли хорошо с контрактом (финализатор)
-     */
-    function isFinalizerSane() public constant returns (bool sane) {
-        return finalizeAgent.isSane();
-    }
-
-    /**
-     * Проверка все ли хорошо с контрактом (ценовая стратегия)
-     */
-    function isPricingSane() public constant returns (bool sane) {
-        return pricingStrategy.isSane(address(this));
     }
 
     /**
@@ -284,18 +235,10 @@ contract Presale is Haltable {
      */
     function getState() public constant returns (State) {
         if (finalized) return State.Finalized;
-        else if (address(finalizeAgent) == 0) return State.Preparing;
-        else if (!finalizeAgent.isSane()) return State.Preparing;
-        else if (!pricingStrategy.isSane(address(this))) return State.Preparing;
         else if (block.timestamp < startsAt) return State.PreFunding;
         else if (block.timestamp <= endsAt && !isPresaleFull()) return State.Funding;
         else if (isPresaleFull()) return State.Success;
         else return State.Failure;
-    }
-
-    /** Спец маркер для проверки в других классах */
-    function isPresale() public constant returns (bool) {
-        return true;
     }
 
     /**

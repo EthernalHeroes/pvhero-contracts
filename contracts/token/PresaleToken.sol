@@ -1,7 +1,7 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.13;
 
-import '../token/StandardToken.sol';
-import "../token/MintableToken.sol";
+import "../zeppelin/contracts/token/StandardToken.sol";
+import "../zeppelin/contracts/ownership/Ownable.sol";
 
 /**
  * Токен предпродаж
@@ -9,11 +9,11 @@ import "../token/MintableToken.sol";
  * ERC-20 токен, для пресейла
  *
  * - Контракт токена дает возможность опционально перейти на новый контракт
- * - Токен может быть с верхним лимитом или без него, контракт может выпускать новые токены (задается параметром _mintable в конструкторе)
+ * - Токен может быть с верхним лимитом или без него
  *
  */
 
-contract PresaleToken is MintableToken {
+contract PresaleToken is StandardToken, Ownable {
 
     /* Описание см. в конструкторе */
     string public name;
@@ -21,6 +21,8 @@ contract PresaleToken is MintableToken {
     string public symbol;
 
     uint public decimals;
+
+    bool public isInitialSupplied = false;
 
     /** Событие обновления токена (имя и символ) */
     event UpdatedTokenInformation(string newName, string newSymbol);
@@ -34,9 +36,8 @@ contract PresaleToken is MintableToken {
      * @param _symbol - символ токена
      * @param _initialSupply - со сколькими токенами мы стартуем
      * @param _decimals - кол-во знаков после запятой
-     * @param _mintable - токен генерится через продажи или прочто через заданное кол-во?
      */
-    function PresaleToken(string _name, string _symbol, uint _initialSupply, uint _decimals, bool _mintable) {
+    function PresaleToken(string _name, string _symbol, uint _initialSupply, uint _decimals) {
         owner = msg.sender;
 
         name = _name;
@@ -46,21 +47,20 @@ contract PresaleToken is MintableToken {
 
         decimals = _decimals;
 
+        //Обязательное требование, чтобы токены имели начальное кол-во
+        require(totalSupply != 0);
+    }
+
+    /**
+     * Владелец должен вызвать эту функцию, чтобы присвоить начальный баланс
+     */
+    function initialSupply(address _toAddress) onlyOwner {
+        require(!isInitialSupplied);
+
         // Создаем начальный баланс токенов на кошельке
-        balances[owner] = totalSupply;
+        balances[_toAddress] = totalSupply;
 
-        if (totalSupply > 0) {
-            // Вызываем событие
-            Minted(owner, totalSupply);
-        }
-
-        // Если токены выпускаются сразу, то считаем, что выпуск токенов больше невозможен
-        if (!_mintable) {
-            mintingFinished = true;
-
-            //Обязательное требование, чтобы токены были mintable или имели начальное кол-во
-            require(totalSupply != 0);
-        }
+        isInitialSupplied = true;
     }
 
     /**
@@ -73,5 +73,6 @@ contract PresaleToken is MintableToken {
         // Вызываем событие
         UpdatedTokenInformation(name, symbol);
     }
+
 
 }
