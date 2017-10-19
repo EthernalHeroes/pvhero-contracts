@@ -117,8 +117,10 @@ contract Presale is Haltable, SafeMath {
 
         uint bonusPercentage = 0;
 
-        // бонус 25%
-        if (weiAmount >= 15 ether && weiAmount < 50 ether){
+        // бонус 0%
+        if (weiAmount >= 0.05 ether && weiAmount < 15 ether){
+            bonusPercentage = 0;
+        } else if (weiAmount >= 15 ether && weiAmount < 50 ether){
             bonusPercentage = 25;
         // бонус 30%
         } else if (weiAmount >= 50 ether && weiAmount < 100 ether){

@@ -304,10 +304,19 @@ contract('AllocatedCappedPresale', async function(accounts) {
     });
 
     // Проверка ценовой стратегии
-    // При переводе меньше 15 эфира - должна возвращаться ошибка
-    it("В состоянии Funding переводы меньше 15 эфира - запрещены", async function() {
-        await checkNotAcceptEther(accounts[1], presale, web3.toWei(14, 'ether'))
-        await checkNotAcceptEther(accounts[1], presale, web3.toWei(14.9, 'ether'));
+    // При переводе меньше 15 эфира - бонус будет нулевой
+    it("В состоянии Funding переводы меньше 15 эфира идут без бонуса", async function() {
+        let sendingEtherValueInWei = web3.toWei(1, 'ether');
+
+        let balanceBefore = await getBalance(accounts[1]);
+
+        await checkSendEtherAndGetBonus(accounts[1], sendingEtherValueInWei, 0);
+
+        let balanceAfter = await getBalance(accounts[1]);
+
+        let gasAmount = balanceBefore - balanceAfter - sendingEtherValueInWei;
+
+        console.log('Стоимость использованного газа: {0} wei'.format(gasAmount));
     });
 
     // При переводе от 15, до 50 включительно - бонус 25%

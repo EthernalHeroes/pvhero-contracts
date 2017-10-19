@@ -9,12 +9,12 @@ const AllocatedCappedPresale = artifacts.require("./AllocatedCappedPresale.sol")
 
 module.exports = function (deployer, network, accounts) {
 
-    Storage.setDevMode({
-        ownerAddress : accounts[0],
-        tokenWalletAddress : accounts[9]
-    });
+    // Storage.setDevMode({
+    //     ownerAddress : accounts[0],
+    //     tokenWalletAddress : accounts[9]
+    // });
 
-    //Storage.setProdMode();
+    Storage.setProdMode();
 
     const tokenWalletAddress = Storage.tokenWalletAddress;
 
